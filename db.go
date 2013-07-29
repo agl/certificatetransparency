@@ -311,20 +311,30 @@ func parseEntry(leafData, extraData []byte) (*Entry, error) {
 	}
 
 	x = extraData
-	for len(x) > 0 {
+	if len(x) > 0 {
 		if len(x) < 3 {
 			return nil, errors.New("ct: extra data truncated")
 		}
-		l := int(x[0])<<16 |
-			int(x[1])<<8 |
-			int(x[2])
+		l := int(x[0])<<16 | int(x[1])<<8 | int(x[2])
 		x = x[3:]
 
-		if l > len(x) {
+		if l != len(x) {
 			return nil, errors.New("ct: extra data truncated")
 		}
-		entry.ExtraCerts = append(entry.ExtraCerts, x[:l])
-		x = x[l:]
+
+		for len(x) > 0 {
+			if len(x) < 3 {
+				return nil, errors.New("ct: extra data truncated")
+			}
+			l := int(x[0])<<16 | int(x[1])<<8 | int(x[2])
+			x = x[3:]
+
+			if l > len(x) {
+				return nil, errors.New("ct: extra data truncated")
+			}
+			entry.ExtraCerts = append(entry.ExtraCerts, x[:l])
+			x = x[l:]
+		}
 	}
 
 	entry.LeafInput = leafData
