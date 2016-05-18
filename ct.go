@@ -40,7 +40,7 @@ type Log struct {
 // NewLog creates a new Log given the base URL of a public key and its public
 // key in PEM format.
 func NewLog(url, pemPublicKey string) (*Log, error) {
-	block, _ := pem.Decode([]byte(pilotKeyPEM))
+	block, _ := pem.Decode([]byte(pemPublicKey))
 	if block == nil {
 		return nil, errors.New("certificatetransparency: no PEM block found in public key")
 	}
