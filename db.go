@@ -312,11 +312,32 @@ func parseEntry(leafData, extraData []byte) (*Entry, error) {
 
 	x = extraData
 	if len(x) > 0 {
+		// For an X509Entry, the contents are:
+		//   ASN.1Cert certificate_chain<0..2^24-1>;
+		// For a PreCertEntry, however, the contents are:
+		// struct {
+		//   ASN.1Cert pre_certificate;
+		//   ASN.1Cert precertificate_chain<0..2^24-1>;
+		// } PrecertChainEntry;
 		if len(x) < 3 {
 			return nil, errors.New("ct: extra data truncated")
 		}
 		l := int(x[0])<<16 | int(x[1])<<8 | int(x[2])
 		x = x[3:]
+
+		if entry.Type == PreCertEntry {
+			if l > len(x) {
+				return nil, errors.New("ct: extra data truncated")
+			}
+			entry.ExtraCerts = append(entry.ExtraCerts, x[:l])
+			x = x[l:]
+
+			if len(x) < 3 {
+				return nil, errors.New("ct: extra data truncated")
+			}
+			l = int(x[0])<<16 | int(x[1])<<8 | int(x[2])
+			x = x[3:]
+		}
 
 		if l != len(x) {
 			return nil, errors.New("ct: extra data truncated")
